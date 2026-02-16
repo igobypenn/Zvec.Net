@@ -14,6 +14,10 @@ BUILD_TYPE="${1:-Release}"
 ZVEC_SRC="${SCRIPT_DIR}/zvec"
 NPROC=$(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4)
 
+# Set cmake policy version for compatibility with cmake 3.31+
+# This applies to all cmake invocations including ExternalProject builds
+export CMAKE_POLICY_VERSION_MINIMUM=3.5
+
 # Detect platform
 OS=$(uname -s | tr '[:upper:]' '[:lower:]')
 ARCH=$(uname -m)
