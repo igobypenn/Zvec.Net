@@ -45,6 +45,31 @@ if [ ! -f "$ZVEC_SRC/CMakeLists.txt" ]; then
     exit 1
 fi
 
+# Apply cmake compatibility fix for cmake 3.31+
+# Replace old cmake_minimum_required versions with 3.5
+PATCH_MARKER="$ZVEC_SRC/.zvec-cmake-fix-applied"
+if [ ! -f "$PATCH_MARKER" ]; then
+    echo ""
+    echo ">>> Fixing cmake_minimum_required versions for cmake 3.31+ compatibility..."
+    
+    # Find all CMakeLists.txt and *.cmake files and fix old cmake_minimum_required
+    find "$ZVEC_SRC" \( -name "CMakeLists.txt" -o -name "*.cmake" \) -type f -exec sed -i \
+        -e 's/cmake_minimum_required[[:space:]]*(VERSION 2\.[0-9]\+\(\.\.[0-9]\+\)\?[^)]*)/cmake_minimum_required(VERSION 3.5)/gi' \
+        -e 's/cmake_minimum_required[[:space:]]*(VERSION 3\.[0-4]\(\.[0-9]\+\)\?[^)]*)/cmake_minimum_required(VERSION 3.5)/gi' \
+        -e 's/cmake_minimum_required[[:space:]]*(VERSION 3\.[0-4][^)]*FATAL_ERROR)/cmake_minimum_required(VERSION 3.5 FATAL_ERROR)/gi' \
+        {} \; 2>/dev/null || true
+    
+    # Fix Arrow's ExternalProject to pass cmake policy flags
+    # This is needed because Arrow spawns a new cmake process that doesn't inherit policies
+    ARROW_CMAKE="$ZVEC_SRC/thirdparty/arrow/CMakeLists.txt"
+    if [ -f "$ARROW_CMAKE" ]; then
+        echo ">>> Fixing Arrow ExternalProject cmake policy flags..."
+        sed -i 's/-DCMAKE_BUILD_TYPE=\${CMAKE_BUILD_TYPE}/-DCMAKE_BUILD_TYPE=\${CMAKE_BUILD_TYPE} -DCMAKE_POLICY_VERSION_MINIMUM=3.5 -DCMAKE_POLICY_DEFAULT_CMP0079=NEW/g' "$ARROW_CMAKE"
+    fi
+    
+    touch "$PATCH_MARKER"
+fi
+
 # ============================================
 # Stage 1: Build zvec
 # ============================================
