@@ -1,0 +1,41 @@
+# .NET build outputs
+bin/
+obj/
+*.nupkg
+*.snupkg
+TestResults/
+*.user
+*.suo
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+# CMake / Native builds
+build/
+cmake-build-*/
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+compile_commands.json
+
+# IDE
+.vs/
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+ehthumbs.db
+
+# Native runtimes (built by CI or build-native.sh)
+src/Zvec.Net/runtimes/
+
+# Coverage
+coverage/
+*.coverage
+*.coveragexml

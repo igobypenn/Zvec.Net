@@ -1,0 +1,173 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+  pull_request:
+    branches: [main]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build-native:
+    name: Build Native (${{ matrix.rid }})
+    runs-on: ${{ matrix.os }}
+    
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            rid: linux-x64
+          - os: ubuntu-24.04-arm
+            rid: linux-arm64
+          - os: macos-latest
+            rid: osx-arm64
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      
+      - name: Setup CMake
+        uses: lukka/get-cmake@latest
+      
+      - name: Build native library
+        run: |
+          chmod +x build-native.sh
+          ./build-native.sh Release
+      
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-${{ matrix.rid }}
+          path: src/Zvec.Net/runtimes/
+          retention-days: 1
+
+  format-check:
+    name: Format Check
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      
+      - name: Format check
+        run: dotnet format Zvec.Net.sln --verify-no-changes --verbosity diagnostic
+
+  test-native:
+    name: Test Native Library
+    needs: build-native
+    runs-on: ubuntu-24.04-arm
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      
+      - name: Download native artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: native-linux-arm64
+          path: src/Zvec.Net/runtimes/
+      
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      
+      - name: Restore
+        run: dotnet restore Zvec.Net.sln
+      
+      - name: Build
+        run: dotnet build Zvec.Net.sln -c Release --no-restore
+      
+      - name: Test (including native)
+        run: |
+          cp src/Zvec.Net/runtimes/linux-arm64/native/libzvec_native.so tests/Zvec.Net.Tests/bin/Release/net8.0/ || true
+          dotnet test tests/Zvec.Net.Tests/Zvec.Net.Tests.csproj -c Release --no-build
+
+  build-dotnet:
+    name: Build & Test .NET
+    needs: build-native
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      
+      - name: Download all native artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: native-*
+          path: src/Zvec.Net/
+          merge-multiple: true
+      
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      
+      - name: Restore
+        run: dotnet restore Zvec.Net.sln
+      
+      - name: Build
+        run: dotnet build Zvec.Net.sln -c Release --no-restore
+      
+      - name: Test with coverage
+        run: |
+          dotnet test tests/Zvec.Net.Tests/Zvec.Net.Tests.csproj -c Release --no-build \
+            --filter "FullyQualifiedName!~Native" \
+            --collect:"XPlat Code Coverage" \
+            --results-directory ./coverage
+      
+      - name: Check coverage threshold
+        run: |
+          # Extract coverage from cobertura XML
+          COVERAGE=$(grep -oP 'line-rate="\K[0-9.]+' coverage/**/coverage.cobertura.xml | head -1)
+          echo "Line coverage: $COVERAGE"
+          
+          # Check if coverage meets minimum threshold (50% for now, increase later)
+          THRESHOLD=0.50
+          if (( $(echo "$COVERAGE < $THRESHOLD" | bc -l) )); then
+            echo "::error::Coverage $COVERAGE is below threshold $THRESHOLD"
+            exit 1
+          fi
+          echo "Coverage check passed!"
+      
+      - name: Pack
+        run: dotnet pack src/Zvec.Net/Zvec.Net.csproj -c Release -o artifacts/
+      
+      - name: Upload package
+        uses: actions/upload-artifact@v4
+        with:
+          name: nuget-package
+          path: artifacts/*.nupkg
+          retention-days: 7
+      
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage/
+          retention-days: 7

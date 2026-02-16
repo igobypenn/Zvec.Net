@@ -1,0 +1,104 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version (e.g., 0.2.0)'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build-native:
+    name: Build Native (${{ matrix.rid }})
+    runs-on: ${{ matrix.os }}
+    
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            rid: linux-x64
+          - os: ubuntu-24.04-arm
+            rid: linux-arm64
+          - os: macos-latest
+            rid: osx-arm64
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      
+      - name: Setup CMake
+        uses: lukka/get-cmake@latest
+      
+      - name: Build native library
+        run: |
+          chmod +x build-native.sh
+          ./build-native.sh Release
+      
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-${{ matrix.rid }}
+          path: src/Zvec.Net/runtimes/
+          retention-days: 1
+
+  publish:
+    name: Publish to GitHub Packages
+    needs: build-native
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      
+      - name: Download all native artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: native-*
+          path: src/Zvec.Net/
+          merge-multiple: true
+      
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+      
+      - name: Determine version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            VERSION="${{ inputs.version }}"
+          else
+            VERSION="${GITHUB_REF#refs/tags/v}"
+          fi
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+      
+      - name: Pack
+        run: |
+          dotnet pack src/Zvec.Net/Zvec.Net.csproj \
+            -c Release \
+            -p:PackageVersion=${{ steps.version.outputs.version }} \
+            -o artifacts/
+      
+      - name: Publish to GitHub Packages
+        run: |
+          dotnet nuget push artifacts/*.nupkg \
+            --source https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json \
+            --api-key ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Create Release
+        if: github.event_name == 'push'
+        uses: softprops/action-gh-release@v1
+        with:
+          files: artifacts/*.nupkg
+          generate_release_notes: true

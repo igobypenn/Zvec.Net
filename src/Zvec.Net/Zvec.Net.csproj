@@ -1,0 +1,46 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <LangVersion>12</LangVersion>
+    
+    <!-- XML Documentation (disable strict checking for now) -->
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <DocumentationFile>bin\$(Configuration)\$(TargetFramework)\Zvec.Net.xml</DocumentationFile>
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
+    
+    <!-- NuGet Package Settings -->
+    <PackageId>Zvec.Net</PackageId>
+    <Version>0.2.0</Version>
+    <Authors>zvec-net contributors</Authors>
+    <Description>A lightweight, lightning-fast, in-process vector database client for .NET. Based on Alibaba's zvec vector database.</Description>
+    <PackageTags>vector;database;embedding;similarity-search;ai;ml;rag</PackageTags>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageProjectUrl>https://github.com/your-org/zvec-net</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/your-org/zvec-net</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    
+    <!-- GitHub Packages requires publish repository -->
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\..\README.md" Pack="true" PackagePath="\" Condition="Exists('..\..\README.md')" />
+  </ItemGroup>
+
+  <!-- Native library packaging - include runtimes directory in NuGet package -->
+  <ItemGroup>
+    <None Include="runtimes\**\*" Pack="true" PackagePath="runtimes" />
+  </ItemGroup>
+
+  <!-- Internals visible to test project -->
+  <ItemGroup>
+    <InternalsVisibleTo Include="Zvec.Net.Tests" />
+  </ItemGroup>
+
+</Project>
