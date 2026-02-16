@@ -57,10 +57,11 @@ cmake -B "$ZVEC_BUILD_DIR" -S "$ZVEC_SRC" \
     -DCMAKE_BUILD_TYPE="$BUILD_TYPE" \
     -DBUILD_PYTHON_BINDINGS=OFF \
     -DBUILD_TOOLS=OFF \
-    -DCMAKE_POSITION_INDEPENDENT_CODE=ON
+    -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
+    -DCMAKE_POLICY_VERSION_MINIMUM=3.5
 
 # Build zvec
-cmake --build "$ZVEC_BUILD_DIR" --config "$BUILD_TYPE" -j"$NPROC"
+cmake --build "$ZVEC_BUILD_DIR" --config "$BUILD_TYPE" -j"$NPROC" -v
 
 # List the built zvec libraries
 echo ""
@@ -85,7 +86,7 @@ cmake -B "$NATIVE_BUILD_DIR" -S src/Zvec.Net.Native \
     -DCMAKE_BUILD_TYPE="$BUILD_TYPE"
 
 # Build
-cmake --build "$NATIVE_BUILD_DIR" --config "$BUILD_TYPE" -j"$NPROC"
+cmake --build "$NATIVE_BUILD_DIR" --config "$BUILD_TYPE" -j"$NPROC" -v
 
 # Prepare output directory
 OUTPUT_DIR="$SCRIPT_DIR/src/Zvec.Net/runtimes/$RUNTIME_ID/native"

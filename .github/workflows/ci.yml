@@ -41,11 +41,6 @@ jobs:
         with:
           submodules: recursive
       
-      - name: Initialize nested submodules
-        run: |
-          cd zvec
-          git submodule update --init --recursive
-      
       - name: Setup CMake
         uses: lukka/get-cmake@latest
       
