@@ -14,27 +14,27 @@ internal sealed class FilterExpressionTranslator<T> : ExpressionVisitor where T 
         nameof(string.EndsWith),
         nameof(string.Contains)
     };
-    
+
     public string Translate(Expression<Func<T, bool>> predicate)
     {
         _filter.Clear();
         Visit(predicate.Body);
         return _filter.ToString();
     }
-    
+
     protected override Expression VisitBinary(BinaryExpression node)
     {
         _filter.Append('(');
-        
+
         Visit(node.Left);
-        
+
         var op = node.NodeType switch
         {
-            ExpressionType.Equal => node.Right is ConstantExpression { Value: null } 
-                ? " IS NULL" 
+            ExpressionType.Equal => node.Right is ConstantExpression { Value: null }
+                ? " IS NULL"
                 : " == ",
-            ExpressionType.NotEqual => node.Right is ConstantExpression { Value: null } 
-                ? " IS NOT NULL" 
+            ExpressionType.NotEqual => node.Right is ConstantExpression { Value: null }
+                ? " IS NOT NULL"
                 : " != ",
             ExpressionType.GreaterThan => " > ",
             ExpressionType.GreaterThanOrEqual => " >= ",
@@ -46,24 +46,24 @@ internal sealed class FilterExpressionTranslator<T> : ExpressionVisitor where T 
                 $"Binary operator '{node.NodeType}' is not supported in filter expressions. " +
                 $"Supported operators: ==, !=, <, <=, >, >=, &&, ||")
         };
-        
+
         _filter.Append(op);
-        
+
         if (op is not (" IS NULL" or " IS NOT NULL"))
         {
             Visit(node.Right);
         }
-        
+
         _filter.Append(')');
         return node;
     }
-    
+
     protected override Expression VisitMember(MemberExpression node)
     {
         _filter.Append(node.Member.Name);
         return node;
     }
-    
+
     protected override Expression VisitConstant(ConstantExpression node)
     {
         var value = node.Value;
@@ -79,13 +79,13 @@ internal sealed class FilterExpressionTranslator<T> : ExpressionVisitor where T 
         });
         return node;
     }
-    
+
     protected override Expression VisitMethodCall(MethodCallExpression node)
     {
         if (node.Method.DeclaringType == typeof(string) && SupportedMethods.Contains(node.Method.Name))
         {
             Visit(node.Object!);
-            
+
             switch (node.Method.Name)
             {
                 case nameof(string.StartsWith):
@@ -98,17 +98,17 @@ internal sealed class FilterExpressionTranslator<T> : ExpressionVisitor where T 
                     _filter.Append(" CONTAIN_ANY ");
                     break;
             }
-            
+
             Visit(node.Arguments[0]);
             return node;
         }
-        
+
         throw new UnsupportedExpressionException(
             $"Method '{node.Method.Name}' is not supported in filter expressions.\n" +
             $"Supported string methods: StartsWith, EndsWith, Contains\n" +
             $"Supported operators: ==, !=, <, <=, >, >=, &&, ||, null checks");
     }
-    
+
     protected override Expression VisitUnary(UnaryExpression node)
     {
         if (node.NodeType == ExpressionType.Convert || node.NodeType == ExpressionType.ConvertChecked)
@@ -116,17 +116,17 @@ internal sealed class FilterExpressionTranslator<T> : ExpressionVisitor where T 
             Visit(node.Operand);
             return node;
         }
-        
+
         if (node.NodeType == ExpressionType.Not)
         {
             _filter.Append('!');
             Visit(node.Operand);
             return node;
         }
-        
+
         throw new UnsupportedExpressionException(
             $"Unary operator '{node.NodeType}' is not supported in filter expressions.");
     }
-    
+
     private static string EscapeString(string s) => s.Replace("'", "\\'");
 }

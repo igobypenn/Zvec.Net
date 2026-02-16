@@ -20,22 +20,22 @@ public abstract record IndexParams
     /// Gets the index type.
     /// </summary>
     public IndexType Type { get; init; }
-    
+
     /// <summary>
     /// Gets the distance metric used for similarity calculation.
     /// </summary>
     public MetricType MetricType { get; init; } = MetricType.Cosine;
-    
+
     /// <summary>
     /// Gets the quantization type for reducing index size.
     /// </summary>
     public QuantizeType QuantizeType { get; init; } = QuantizeType.Undefined;
-    
+
     /// <summary>
     /// Protected constructor.
     /// </summary>
     protected IndexParams(IndexType type) => Type = type;
-    
+
     /// <summary>
     /// Creates HNSW index parameters for fast approximate nearest neighbor search.
     /// </summary>
@@ -43,9 +43,9 @@ public abstract record IndexParams
     /// <param name="efConstruction">Size of dynamic candidate list during construction (default: 200).</param>
     /// <param name="metric">Distance metric (default: Cosine).</param>
     /// <returns>HNSW index parameters.</returns>
-    public static HnswIndexParams Hnsw(int m = 16, int efConstruction = 200, MetricType metric = MetricType.Cosine) 
+    public static HnswIndexParams Hnsw(int m = 16, int efConstruction = 200, MetricType metric = MetricType.Cosine)
         => new() { M = m, EfConstruction = efConstruction, MetricType = metric };
-    
+
     /// <summary>
     /// Creates IVF index parameters for inverted file index.
     /// </summary>
@@ -53,23 +53,23 @@ public abstract record IndexParams
     /// <param name="nProbe">Number of clusters to search (default: 64).</param>
     /// <param name="metric">Distance metric (default: Cosine).</param>
     /// <returns>IVF index parameters.</returns>
-    public static IvfIndexParams Ivf(int nLists = 1024, int nProbe = 64, MetricType metric = MetricType.Cosine) 
+    public static IvfIndexParams Ivf(int nLists = 1024, int nProbe = 64, MetricType metric = MetricType.Cosine)
         => new() { NLists = nLists, NProbe = nProbe, MetricType = metric };
-    
+
     /// <summary>
     /// Creates flat index parameters for exact brute-force search.
     /// </summary>
     /// <param name="metric">Distance metric (default: Cosine).</param>
     /// <returns>Flat index parameters.</returns>
-    public static FlatIndexParams Flat(MetricType metric = MetricType.Cosine) 
+    public static FlatIndexParams Flat(MetricType metric = MetricType.Cosine)
         => new() { MetricType = metric };
-    
+
     /// <summary>
     /// Creates inverted index parameters for scalar fields.
     /// </summary>
     /// <param name="enableRangeOptimization">Whether to optimize for range queries.</param>
     /// <returns>Inverted index parameters.</returns>
-    public static InvertIndexParams Invert(bool enableRangeOptimization = false) 
+    public static InvertIndexParams Invert(bool enableRangeOptimization = false)
         => new() { EnableRangeOptimization = enableRangeOptimization };
 }
 
@@ -88,7 +88,7 @@ public sealed record HnswIndexParams : IndexParams
     /// Higher values improve recall but increase memory usage. Typical range: 8-64.
     /// </remarks>
     public int M { get; init; } = 16;
-    
+
     /// <summary>
     /// Gets the size of dynamic candidate list during index construction.
     /// </summary>
@@ -96,7 +96,7 @@ public sealed record HnswIndexParams : IndexParams
     /// Higher values improve index quality but increase construction time. Typical range: 100-500.
     /// </remarks>
     public int EfConstruction { get; init; } = 200;
-    
+
     /// <summary>
     /// Initializes a new instance.
     /// </summary>
@@ -118,7 +118,7 @@ public sealed record IvfIndexParams : IndexParams
     /// Higher values improve search speed but may reduce recall. Typical: sqrt(N) where N is document count.
     /// </remarks>
     public int NLists { get; init; } = 1024;
-    
+
     /// <summary>
     /// Gets the number of clusters to search during query.
     /// </summary>
@@ -126,7 +126,7 @@ public sealed record IvfIndexParams : IndexParams
     /// Higher values improve recall but reduce speed. Typical: 10-100.
     /// </remarks>
     public int NProbe { get; init; } = 64;
-    
+
     /// <summary>
     /// Initializes a new instance.
     /// </summary>

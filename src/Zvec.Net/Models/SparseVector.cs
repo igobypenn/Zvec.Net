@@ -13,7 +13,7 @@ public sealed class SparseVector
 {
     private readonly uint[] _indices;
     private readonly float[] _values;
-    
+
     /// <summary>
     /// Initializes a new sparse vector with the specified indices and values.
     /// </summary>
@@ -29,18 +29,18 @@ public sealed class SparseVector
         _indices = indices;
         _values = values;
     }
-    
+
     private SparseVector()
     {
         _indices = Array.Empty<uint>();
         _values = Array.Empty<float>();
     }
-    
+
     /// <summary>
     /// Gets the number of non-zero elements in this vector.
     /// </summary>
     public int Count => _indices.Length;
-    
+
     /// <summary>
     /// Gets the value at the specified index.
     /// </summary>
@@ -54,22 +54,22 @@ public sealed class SparseVector
             return idx >= 0 ? _values[idx] : 0f;
         }
     }
-    
+
     /// <summary>
     /// Gets the indices of non-zero elements.
     /// </summary>
     public IReadOnlyList<uint> Indices => _indices;
-    
+
     /// <summary>
     /// Gets the values at the non-zero indices.
     /// </summary>
     public IReadOnlyList<float> Values => _values;
-    
+
     /// <summary>
     /// Gets an empty sparse vector.
     /// </summary>
     public static SparseVector Empty { get; } = new();
-    
+
     /// <summary>
     /// Creates a sparse vector from a dictionary of index-value pairs.
     /// </summary>
@@ -81,7 +81,7 @@ public sealed class SparseVector
         var vals = indices.Select(i => values[i]).ToArray();
         return new SparseVector(indices, vals);
     }
-    
+
     /// <summary>
     /// Converts this sparse vector to a dictionary.
     /// </summary>
@@ -95,7 +95,7 @@ public sealed class SparseVector
         }
         return dict;
     }
-    
+
     /// <summary>
     /// Determines whether this sparse vector equals another.
     /// </summary>
@@ -106,10 +106,10 @@ public sealed class SparseVector
         if (other is null) return false;
         if (ReferenceEquals(this, other)) return true;
         if (_indices.Length != other._indices.Length) return false;
-        
+
         for (int i = 0; i < _indices.Length; i++)
         {
-            if (_indices[i] != other._indices[i] || 
+            if (_indices[i] != other._indices[i] ||
                 Math.Abs(_values[i] - other._values[i]) > float.Epsilon)
             {
                 return false;
@@ -117,10 +117,10 @@ public sealed class SparseVector
         }
         return true;
     }
-    
+
     /// <inheritdoc/>
     public override bool Equals(object? obj) => Equals(obj as SparseVector);
-    
+
     /// <inheritdoc/>
     public override int GetHashCode()
     {
@@ -129,7 +129,7 @@ public sealed class SparseVector
         foreach (var val in _values) hash.Add(val);
         return hash.ToHashCode();
     }
-    
+
     /// <inheritdoc/>
     public override string ToString() => $"SparseVector[Count={Count}]";
 }

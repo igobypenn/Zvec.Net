@@ -9,7 +9,7 @@ internal static class NativeStatusExtensions
     {
         return Status.From((StatusCode)status.Code, status.GetMessage() ?? string.Empty);
     }
-    
+
     public static void ThrowIfError(this in NativeStatus status, string operation)
     {
         if (!status.IsOk)

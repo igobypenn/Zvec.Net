@@ -9,17 +9,17 @@ public enum MetricType
     /// Undefined metric type.
     /// </summary>
     Undefined = 0,
-    
+
     /// <summary>
     /// Euclidean distance (L2 norm).
     /// </summary>
     L2 = 1,
-    
+
     /// <summary>
     /// Inner product (dot product).
     /// </summary>
     Ip = 2,
-    
+
     /// <summary>
     /// Cosine similarity.
     /// </summary>

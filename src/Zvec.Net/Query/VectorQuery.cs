@@ -20,47 +20,47 @@ public sealed record VectorQuery
     /// Gets the name of the vector field to search.
     /// </summary>
     public string FieldName { get; init; }
-    
+
     /// <summary>
     /// Gets the document ID for ID-based queries.
     /// </summary>
     public string? DocumentId { get; init; }
-    
+
     /// <summary>
     /// Gets the query vector for vector-based queries.
     /// </summary>
     public float[]? Vector { get; init; }
-    
+
     /// <summary>
     /// Gets the sparse query vector for sparse queries.
     /// </summary>
     public SparseVector? SparseVector { get; init; }
-    
+
     /// <summary>
     /// Gets the weight for multi-vector queries.
     /// </summary>
     public double Weight { get; init; } = 1.0;
-    
+
     /// <summary>
     /// Gets the index-specific query parameters.
     /// </summary>
     public IndexQueryParam? Param { get; init; }
-    
+
     /// <summary>
     /// Gets a value indicating whether this is an ID-based query.
     /// </summary>
     public bool HasId => !string.IsNullOrEmpty(DocumentId);
-    
+
     /// <summary>
     /// Gets a value indicating whether this is a vector-based query.
     /// </summary>
     public bool HasVector => Vector != null || SparseVector != null;
-    
+
     /// <summary>
     /// Gets a value indicating whether this is a sparse vector query.
     /// </summary>
     public bool IsSparse => SparseVector != null;
-    
+
     /// <summary>
     /// Initializes a new vector query for the specified field.
     /// </summary>
@@ -69,7 +69,7 @@ public sealed record VectorQuery
     {
         FieldName = fieldName ?? throw new ArgumentNullException(nameof(fieldName));
     }
-    
+
     /// <summary>
     /// Creates a query that finds vectors similar to the specified document's vector.
     /// </summary>
@@ -82,7 +82,7 @@ public sealed record VectorQuery
     {
         if (string.IsNullOrEmpty(documentId))
             throw new ArgumentException("Document ID cannot be null or empty", nameof(documentId));
-        
+
         return new VectorQuery(fieldName)
         {
             DocumentId = documentId,
@@ -90,7 +90,7 @@ public sealed record VectorQuery
             Param = param
         };
     }
-    
+
     /// <summary>
     /// Creates a query that finds vectors similar to the specified vector.
     /// </summary>
@@ -103,7 +103,7 @@ public sealed record VectorQuery
     {
         if (vector == null || vector.Length == 0)
             throw new ArgumentException("Vector cannot be null or empty", nameof(vector));
-        
+
         return new VectorQuery(fieldName)
         {
             Vector = vector,
@@ -111,7 +111,7 @@ public sealed record VectorQuery
             Param = param
         };
     }
-    
+
     /// <summary>
     /// Creates a query that finds sparse vectors similar to the specified sparse vector.
     /// </summary>
@@ -129,7 +129,7 @@ public sealed record VectorQuery
             Param = param
         };
     }
-    
+
     /// <summary>
     /// Validates the query for correctness.
     /// </summary>
@@ -138,10 +138,10 @@ public sealed record VectorQuery
     {
         if (string.IsNullOrEmpty(FieldName))
             throw new ArgumentException("Field name cannot be empty");
-        
+
         if (HasId && HasVector)
             throw new ArgumentException("Cannot specify both document ID and vector");
-        
+
         if (!HasId && !HasVector)
             throw new ArgumentException("Must specify either document ID or vector");
     }

@@ -15,29 +15,29 @@ public readonly record struct Status
     /// Gets the status code indicating success or the type of error.
     /// </summary>
     public StatusCode Code { get; init; }
-    
+
     /// <summary>
     /// Gets the human-readable message describing the status.
     /// </summary>
     public string Message { get; init; }
-    
+
     /// <summary>
     /// Gets a value indicating whether the operation succeeded.
     /// </summary>
     /// <value><c>true</c> if the operation succeeded; otherwise, <c>false</c>.</value>
     public bool IsOk => Code == StatusCode.Ok;
-    
+
     /// <summary>
     /// Gets a value indicating whether the operation failed.
     /// </summary>
     /// <value><c>true</c> if the operation failed; otherwise, <c>false</c>.</value>
     public bool IsError => Code != StatusCode.Ok;
-    
+
     /// <summary>
     /// Gets a status indicating successful completion.
     /// </summary>
     public static Status Ok => new() { Code = StatusCode.Ok, Message = string.Empty };
-    
+
     /// <summary>
     /// Creates a status from a code and message.
     /// </summary>
@@ -45,7 +45,7 @@ public readonly record struct Status
     /// <param name="message">The status message.</param>
     /// <returns>A new <see cref="Status"/> instance.</returns>
     public static Status From(StatusCode code, string message) => new() { Code = code, Message = message };
-    
+
     /// <summary>
     /// Throws a <see cref="ZvecException"/> if this status indicates an error.
     /// </summary>
@@ -57,7 +57,7 @@ public readonly record struct Status
             throw new ZvecException(Code, Message);
         }
     }
-    
+
     /// <summary>
     /// Returns a string representation of this status.
     /// </summary>

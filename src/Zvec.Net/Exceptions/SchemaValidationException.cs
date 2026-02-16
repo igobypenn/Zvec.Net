@@ -11,7 +11,7 @@ public sealed class SchemaValidationException : ZvecException
     /// Initializes a new instance with the specified message.
     /// </summary>
     /// <param name="message">The error message describing the validation failure.</param>
-    public SchemaValidationException(string message) 
+    public SchemaValidationException(string message)
         : base(StatusCode.InvalidSchema, message)
     {
     }

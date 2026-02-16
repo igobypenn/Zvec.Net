@@ -11,7 +11,7 @@ internal static class TypeValidator
     public static void ValidateVectorProperty(PropertyInfo prop, VectorFieldAttribute attr)
     {
         ValidateVectorType(prop, attr);
-        
+
         if (attr.Dimension <= 0 && !attr.Precision.IsSparse())
         {
             throw new SchemaValidationException(
@@ -20,12 +20,12 @@ internal static class TypeValidator
                 $"  Dimension must be > 0 for dense vectors. Use dimension: 0 only for sparse vectors.");
         }
     }
-    
+
     private static void ValidateVectorType(PropertyInfo prop, VectorFieldAttribute attr)
     {
         var actualType = Nullable.GetUnderlyingType(prop.PropertyType) ?? prop.PropertyType;
         var expectedType = GetExpectedVectorType(attr.Precision);
-        
+
         if (actualType != expectedType)
         {
             throw new SchemaValidationException(
@@ -35,7 +35,7 @@ internal static class TypeValidator
                 $"  Solution: change property type to '{expectedType.Name}?' or update the precision attribute.");
         }
     }
-    
+
     private static Type GetExpectedVectorType(VectorPrecision precision) => precision switch
     {
         VectorPrecision.Float64 => typeof(double[]),
@@ -46,6 +46,6 @@ internal static class TypeValidator
         VectorPrecision.SparseFloat16 => typeof(SparseVector),
         _ => throw new ArgumentOutOfRangeException(nameof(precision), precision, "Unknown precision")
     };
-    
+
     private static string GetTypeName(PropertyInfo prop) => prop.DeclaringType?.Name ?? "<unknown>";
 }

@@ -18,14 +18,14 @@ public sealed class Collection : IVectorCollection
     private IntPtr _handle;
     private readonly CollectionSchema _schema;
     private volatile bool _disposed;
-    
+
     private Collection(IntPtr handle, CollectionSchema schema, INativeMethods native)
     {
         _handle = handle;
         _schema = schema;
         _native = native;
     }
-    
+
     /// <summary>
     /// Gets the filesystem path where the collection is stored.
     /// </summary>
@@ -38,12 +38,12 @@ public sealed class Collection : IVectorCollection
             return Marshal.PtrToStringUTF8(ptr) ?? string.Empty;
         }
     }
-    
+
     /// <summary>
     /// Gets the schema definition for this collection.
     /// </summary>
     public CollectionSchema Schema => _schema;
-    
+
     /// <summary>
     /// Gets statistics about the collection.
     /// </summary>
@@ -55,9 +55,9 @@ public sealed class Collection : IVectorCollection
             return new CollectionStats();
         }
     }
-    
+
     // ===== Generic Factory Methods =====
-    
+
     /// <summary>
     /// Creates and opens a new typed vector collection.
     /// </summary>
@@ -65,12 +65,12 @@ public sealed class Collection : IVectorCollection
     /// <param name="path">The filesystem path where the collection will be stored.</param>
     /// <param name="options">Optional collection configuration.</param>
     /// <returns>A new typed collection instance.</returns>
-    public static Collection<T> CreateAndOpen<T>(string path, CollectionOptions? options = null) 
+    public static Collection<T> CreateAndOpen<T>(string path, CollectionOptions? options = null)
         where T : class, IDocument, new()
     {
         return Collection<T>.CreateAndOpen(path, options);
     }
-    
+
     /// <summary>
     /// Opens an existing typed vector collection.
     /// </summary>
@@ -78,14 +78,14 @@ public sealed class Collection : IVectorCollection
     /// <param name="path">The filesystem path where the collection is stored.</param>
     /// <param name="options">Optional collection configuration.</param>
     /// <returns>A typed collection instance.</returns>
-    public static Collection<T> Open<T>(string path, CollectionOptions? options = null) 
+    public static Collection<T> Open<T>(string path, CollectionOptions? options = null)
         where T : class, IDocument, new()
     {
         return Collection<T>.Open(path, options);
     }
-    
+
     // ===== Non-Generic Factory Methods =====
-    
+
     /// <summary>
     /// Creates and opens a new collection with an explicit schema.
     /// </summary>
@@ -97,26 +97,26 @@ public sealed class Collection : IVectorCollection
     {
         return CreateAndOpen(path, schema, options, NativeMethodsWrapper.Instance);
     }
-    
+
     internal static Collection CreateAndOpen(string path, CollectionSchema schema, CollectionOptions? options, INativeMethods native)
     {
         ThrowHelper.ThrowIfNullOrEmpty(path, nameof(path));
-        
+
         var nativeOptions = NativeCollectionOptions.Create(
             options?.SegmentMaxDocs ?? 1_000_000,
             options?.IndexBuildParallel ?? 0,
             options?.AutoFlush ?? true);
-        
+
         var nativeSchemaPtr = CreateNativeSchema(schema, native);
         try
         {
             var status = native.zvec_collection_create_and_open(path, nativeSchemaPtr, in nativeOptions, out var handle);
-            
+
             if (!status.IsOk)
             {
                 throw new ZvecException((StatusCode)status.Code, status.GetMessage() ?? "Failed to create collection");
             }
-            
+
             return new Collection(handle, schema, native);
         }
         finally
@@ -127,7 +127,7 @@ public sealed class Collection : IVectorCollection
             }
         }
     }
-    
+
     /// <summary>
     /// Opens an existing collection.
     /// </summary>
@@ -138,29 +138,29 @@ public sealed class Collection : IVectorCollection
     {
         return Open(path, options, NativeMethodsWrapper.Instance);
     }
-    
+
     internal static Collection Open(string path, CollectionOptions? options, INativeMethods native)
     {
         ThrowHelper.ThrowIfNullOrEmpty(path, nameof(path));
-        
+
         var nativeOptions = NativeCollectionOptions.Create(
             options?.SegmentMaxDocs ?? 1_000_000,
             options?.IndexBuildParallel ?? 0,
             options?.AutoFlush ?? true);
-        
+
         var status = native.zvec_collection_open(path, in nativeOptions, out var handle);
-        
+
         if (!status.IsOk)
         {
             throw new ZvecException((StatusCode)status.Code, status.GetMessage() ?? "Failed to open collection");
         }
-        
+
         var schemaPtr = native.zvec_collection_get_schema(handle);
         var schema = NativeSchemaHelper.ReadSchemaFromNative(native, schemaPtr);
-        
+
         return new Collection(handle, schema, native);
     }
-    
+
     /// <summary>
     /// Flushes pending writes to disk.
     /// </summary>
@@ -169,7 +169,7 @@ public sealed class Collection : IVectorCollection
         ThrowIfDisposed();
         _native.zvec_collection_flush(_handle).ThrowIfError("Flush");
     }
-    
+
     /// <summary>
     /// Destroys the collection and deletes all data from disk.
     /// </summary>
@@ -178,7 +178,7 @@ public sealed class Collection : IVectorCollection
         ThrowIfDisposed();
         _native.zvec_collection_destroy_data(_handle).ThrowIfError("Destroy");
     }
-    
+
     /// <summary>
     /// Disposes the collection, releasing the native handle.
     /// </summary>
@@ -192,12 +192,12 @@ public sealed class Collection : IVectorCollection
             _handle = IntPtr.Zero;
         }
     }
-    
+
     private void ThrowIfDisposed()
     {
         if (_disposed) throw ThrowHelper.CollectionDisposed();
     }
-    
+
     private static IntPtr CreateNativeSchema(CollectionSchema schema, INativeMethods native)
     {
         var schemaPtr = native.zvec_schema_create(schema.Name);
@@ -205,7 +205,7 @@ public sealed class Collection : IVectorCollection
         {
             throw new ZvecException(StatusCode.InternalError, "Failed to create native schema");
         }
-        
+
         try
         {
             foreach (var field in schema.Fields)
@@ -225,7 +225,7 @@ public sealed class Collection : IVectorCollection
                     fieldDef.Free();
                 }
             }
-            
+
             foreach (var vector in schema.Vectors)
             {
                 var fieldDef = NativeFieldDef.FromVectorSchema(vector);
@@ -243,7 +243,7 @@ public sealed class Collection : IVectorCollection
                     fieldDef.Free();
                 }
             }
-            
+
             return schemaPtr;
         }
         catch

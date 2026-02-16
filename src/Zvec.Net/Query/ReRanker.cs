@@ -12,7 +12,7 @@ public interface IReRanker
     /// Gets the name of the reranker.
     /// </summary>
     string Name { get; }
-    
+
     /// <summary>
     /// Converts the reranker to a filter expression string.
     /// </summary>
@@ -33,7 +33,7 @@ public sealed class RrfReRanker : IReRanker
     /// Gets the name of this reranker ("RRF").
     /// </summary>
     public string Name => "RRF";
-    
+
     /// <summary>
     /// Gets the k parameter for RRF calculation.
     /// </summary>
@@ -41,7 +41,7 @@ public sealed class RrfReRanker : IReRanker
     /// Higher values smooth the ranking. Default is 60.
     /// </remarks>
     public double K { get; }
-    
+
     /// <summary>
     /// Initializes a new RRF reranker with the specified k parameter.
     /// </summary>
@@ -53,10 +53,10 @@ public sealed class RrfReRanker : IReRanker
             throw new ArgumentException("K must be positive", nameof(k));
         K = k;
     }
-    
+
     /// <inheritdoc/>
     public string ToFilterExpression() => $"rrf(k={K})";
-    
+
     /// <inheritdoc/>
     public override string ToString() => $"RrfReRanker(K={K})";
 }
@@ -74,12 +74,12 @@ public sealed class WeightedReRanker : IReRanker
     /// Gets the name of this reranker ("Weighted").
     /// </summary>
     public string Name => "Weighted";
-    
+
     /// <summary>
     /// Gets the weight assignments for each vector field.
     /// </summary>
     public IReadOnlyDictionary<string, double> Weights { get; }
-    
+
     /// <summary>
     /// Initializes a new weighted reranker with the specified weights.
     /// </summary>
@@ -89,21 +89,21 @@ public sealed class WeightedReRanker : IReRanker
     {
         if (weights == null || weights.Count == 0)
             throw new ArgumentException("Weights cannot be null or empty", nameof(weights));
-        
+
         var sum = weights.Values.Sum();
         if (Math.Abs(sum - 1.0) > 0.001)
             throw new ArgumentException($"Weights must sum to 1.0, but sum is {sum}", nameof(weights));
-        
+
         Weights = new Dictionary<string, double>(weights);
     }
-    
+
     /// <inheritdoc/>
     public string ToFilterExpression()
     {
         var parts = Weights.Select(kv => $"{kv.Key}:{kv.Value:F4}");
         return $"weighted({string.Join(",", parts)})";
     }
-    
+
     /// <inheritdoc/>
     public override string ToString() => $"WeightedReRanker[{Weights.Count} fields]";
 }

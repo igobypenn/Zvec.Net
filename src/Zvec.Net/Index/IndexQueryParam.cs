@@ -11,7 +11,7 @@ public abstract record IndexQueryParam
     /// <param name="ef">Size of dynamic candidate list during search (default: 64).</param>
     /// <returns>HNSW query parameters.</returns>
     public static HnswQueryParam Hnsw(int ef = 64) => new() { Ef = ef };
-    
+
     /// <summary>
     /// Creates IVF query parameters.
     /// </summary>

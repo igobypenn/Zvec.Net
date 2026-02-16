@@ -15,17 +15,17 @@ public sealed class FieldAttribute : Attribute
     /// Gets or sets a value indicating whether the field can be null.
     /// </summary>
     public bool Nullable { get; init; } = false;
-    
+
     /// <summary>
     /// Gets or sets a value indicating whether the field should be indexed.
     /// </summary>
     public bool Indexed { get; init; } = false;
-    
+
     /// <summary>
     /// Initializes a new instance of the <see cref="FieldAttribute"/> class.
     /// </summary>
     public FieldAttribute() { }
-    
+
     /// <summary>
     /// Initializes a new instance with specified nullability.
     /// </summary>

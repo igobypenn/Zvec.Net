@@ -10,9 +10,9 @@ internal struct NativeStatus
 {
     public int Code;
     public IntPtr Message;
-    
+
     public readonly bool IsOk => Code == 0;
-    
+
     public readonly string? GetMessage()
     {
         return Message != IntPtr.Zero ? Marshal.PtrToStringUTF8(Message) : null;
@@ -32,7 +32,7 @@ internal struct NativeFieldDef
     public int EfConstruction;
     public int NLists;
     public int QuantizeType;
-    
+
     public void Free()
     {
         if (Name != IntPtr.Zero)
@@ -41,7 +41,7 @@ internal struct NativeFieldDef
             Name = IntPtr.Zero;
         }
     }
-    
+
     public static NativeFieldDef Create(string name, int dataType, int dimension = 0, bool nullable = true)
     {
         return new NativeFieldDef
@@ -58,7 +58,7 @@ internal struct NativeFieldDef
             QuantizeType = (int)Types.QuantizeType.Undefined
         };
     }
-    
+
     public static NativeFieldDef FromFieldSchema(FieldSchema field)
     {
         return new NativeFieldDef
@@ -75,7 +75,7 @@ internal struct NativeFieldDef
             QuantizeType = (int)Types.QuantizeType.Undefined
         };
     }
-    
+
     public static NativeFieldDef FromVectorSchema(VectorSchema vector)
     {
         var def = new NativeFieldDef
@@ -91,7 +91,7 @@ internal struct NativeFieldDef
             EfConstruction = 0,
             NLists = 0
         };
-        
+
         if (vector.IndexParams is HnswIndexParams hnsw)
         {
             def.M = hnsw.M;
@@ -101,7 +101,7 @@ internal struct NativeFieldDef
         {
             def.NLists = ivf.NLists;
         }
-        
+
         return def;
     }
 }
@@ -112,7 +112,7 @@ internal struct NativeCollectionOptions
     public int SegmentMaxDocs;
     public int IndexBuildParallel;
     public int AutoFlush;
-    
+
     public static NativeCollectionOptions Create(int segmentMaxDocs = 1_000_000, int indexBuildParallel = 0, bool autoFlush = true)
     {
         return new NativeCollectionOptions

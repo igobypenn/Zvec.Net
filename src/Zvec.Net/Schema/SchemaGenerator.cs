@@ -22,19 +22,19 @@ internal static class SchemaGenerator
         var type = typeof(T);
         var fields = new List<FieldSchema>();
         var vectors = new List<VectorSchema>();
-        
+
         foreach (var prop in type.GetProperties(BindingFlags.Public | BindingFlags.Instance))
         {
             var keyAttr = prop.GetCustomAttribute<KeyAttribute>();
             var fieldAttr = prop.GetCustomAttribute<FieldAttribute>();
             var vectorAttr = prop.GetCustomAttribute<VectorFieldAttribute>();
-            
+
             if (keyAttr != null)
                 continue;
-            
+
             if (prop.Name == nameof(IDocument.Id) || prop.Name == nameof(DocumentBase.Score))
                 continue;
-            
+
             if (vectorAttr != null)
             {
                 var vectorSchema = CreateVectorSchema(prop, vectorAttr);
@@ -46,23 +46,23 @@ internal static class SchemaGenerator
                 fields.Add(fieldSchema);
             }
         }
-        
+
         return new CollectionSchema(type.Name, fields, vectors);
     }
-    
+
     private static bool IsImplicitField(PropertyInfo prop)
     {
         var type = Nullable.GetUnderlyingType(prop.PropertyType) ?? prop.PropertyType;
         return type.IsValueType || type == typeof(string);
     }
-    
+
     private static VectorSchema CreateVectorSchema(PropertyInfo prop, VectorFieldAttribute attr)
     {
         Internal.TypeValidator.ValidateVectorProperty(prop, attr);
-        
+
         var dataType = attr.Precision.ToDataType();
         var indexParams = CreateIndexParam(attr);
-        
+
         return new VectorSchema(
             name: prop.Name,
             dataType: dataType,
@@ -71,7 +71,7 @@ internal static class SchemaGenerator
             nullable: attr.Nullable
         );
     }
-    
+
     private static IndexParams CreateIndexParam(VectorFieldAttribute attr)
     {
         return attr.IndexType switch
@@ -80,34 +80,34 @@ internal static class SchemaGenerator
                 m: attr.M > 0 ? attr.M : 16,
                 efConstruction: attr.EfConstruction > 0 ? attr.EfConstruction : 200,
                 metric: attr.MetricType),
-            
+
             IndexType.Ivf => IndexParams.Ivf(
                 nLists: attr.NLists > 0 ? attr.NLists : 1024,
                 nProbe: attr.NProbe > 0 ? attr.NProbe : 64,
                 metric: attr.MetricType),
-            
+
             IndexType.Flat => IndexParams.Flat(metric: attr.MetricType),
-            
+
             _ => IndexParams.Flat(metric: attr.MetricType)
         };
     }
-    
+
     private static FieldSchema CreateFieldSchema(PropertyInfo prop, FieldAttribute? attr)
     {
         var dataType = InferDataType(prop.PropertyType);
         var nullable = attr?.Nullable ?? IsNullableType(prop.PropertyType);
-        
-        InvertIndexParams? indexParams = attr?.Indexed == true 
-            ? IndexParams.Invert() 
+
+        InvertIndexParams? indexParams = attr?.Indexed == true
+            ? IndexParams.Invert()
             : null;
-        
+
         return new FieldSchema(prop.Name, dataType, nullable, indexParams);
     }
-    
+
     private static DataType InferDataType(Type type)
     {
         var underlying = Nullable.GetUnderlyingType(type) ?? type;
-        
+
         if (underlying == typeof(string)) return DataType.String;
         if (underlying == typeof(bool)) return DataType.Bool;
         if (underlying == typeof(int)) return DataType.Int32;
@@ -117,19 +117,19 @@ internal static class SchemaGenerator
         if (underlying == typeof(float)) return DataType.Float;
         if (underlying == typeof(double)) return DataType.Double;
         if (underlying == typeof(byte[])) return DataType.Binary;
-        
+
         if (underlying == typeof(int[])) return DataType.ArrayInt32;
         if (underlying == typeof(long[])) return DataType.ArrayInt64;
         if (underlying == typeof(float[])) return DataType.ArrayFloat;
         if (underlying == typeof(double[])) return DataType.ArrayDouble;
         if (underlying == typeof(string[])) return DataType.ArrayString;
         if (underlying == typeof(bool[])) return DataType.ArrayBool;
-        
+
         throw new SchemaValidationException(
             $"Cannot infer DataType for property type '{type.Name}'. " +
             $"Add [Field] or [VectorField] attribute explicitly.");
     }
-    
+
     private static bool IsNullableType(Type type)
     {
         if (Nullable.GetUnderlyingType(type) != null) return true;

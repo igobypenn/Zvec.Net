@@ -12,22 +12,22 @@ public sealed class FieldSchema
     /// Gets the field name.
     /// </summary>
     public string Name { get; }
-    
+
     /// <summary>
     /// Gets the data type of the field.
     /// </summary>
     public DataType DataType { get; }
-    
+
     /// <summary>
     /// Gets a value indicating whether the field can contain null values.
     /// </summary>
     public bool Nullable { get; }
-    
+
     /// <summary>
     /// Gets the index parameters for this field, if indexed.
     /// </summary>
     public InvertIndexParams? IndexParams { get; }
-    
+
     /// <summary>
     /// Initializes a new field schema.
     /// </summary>
@@ -40,16 +40,16 @@ public sealed class FieldSchema
     {
         if (string.IsNullOrEmpty(name))
             throw new ArgumentException("Field name cannot be null or empty", nameof(name));
-        
+
         if (!IsScalarDataType(dataType))
             throw new ArgumentException($"DataType.{dataType} is not a valid scalar type. Use VectorSchema for vector fields.", nameof(dataType));
-        
+
         Name = name;
         DataType = dataType;
         Nullable = nullable;
         IndexParams = indexParams;
     }
-    
+
     private static bool IsScalarDataType(DataType type) => type switch
     {
         DataType.Int32 or DataType.Int64 or DataType.UInt32 or DataType.UInt64 or
@@ -60,7 +60,7 @@ public sealed class FieldSchema
         DataType.ArrayBinary => true,
         _ => false
     };
-    
+
     /// <inheritdoc/>
     public override string ToString() => $"FieldSchema[{Name}, {DataType}, Nullable={Nullable}]";
 }

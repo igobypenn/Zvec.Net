@@ -11,27 +11,27 @@ public enum VectorPrecision
     /// 64-bit floating point vectors.
     /// </summary>
     Float64,
-    
+
     /// <summary>
     /// 32-bit floating point vectors (most common).
     /// </summary>
     Float32,
-    
+
     /// <summary>
     /// 16-bit floating point vectors (memory efficient).
     /// </summary>
     Float16,
-    
+
     /// <summary>
     /// 8-bit signed integer vectors (quantized).
     /// </summary>
     Int8,
-    
+
     /// <summary>
     /// Sparse 32-bit floating point vectors.
     /// </summary>
     SparseFloat32,
-    
+
     /// <summary>
     /// Sparse 16-bit floating point vectors.
     /// </summary>
@@ -58,12 +58,12 @@ public static class VectorPrecisionExtensions
         VectorPrecision.SparseFloat16 => DataType.SparseVectorFp16,
         _ => throw new ArgumentOutOfRangeException(nameof(precision), precision, null)
     };
-    
+
     /// <summary>
     /// Determines whether the precision represents a sparse vector.
     /// </summary>
     /// <param name="precision">The vector precision.</param>
     /// <returns><c>true</c> if sparse; otherwise, <c>false</c>.</returns>
-    public static bool IsSparse(this VectorPrecision precision) => 
+    public static bool IsSparse(this VectorPrecision precision) =>
         precision is VectorPrecision.SparseFloat32 or VectorPrecision.SparseFloat16;
 }

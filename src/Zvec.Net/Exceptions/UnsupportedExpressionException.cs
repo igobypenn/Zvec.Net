@@ -11,7 +11,7 @@ public sealed class UnsupportedExpressionException : ZvecException
     /// Initializes a new instance with the specified message.
     /// </summary>
     /// <param name="message">The error message describing the unsupported expression.</param>
-    public UnsupportedExpressionException(string message) 
+    public UnsupportedExpressionException(string message)
         : base(StatusCode.InvalidArgument, message)
     {
     }

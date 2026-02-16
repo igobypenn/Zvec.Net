@@ -22,7 +22,7 @@ public abstract class DocumentBase : IDocument
     /// Gets or sets the unique identifier for this document.
     /// </summary>
     public string Id { get; set; } = string.Empty;
-    
+
     /// <summary>
     /// Gets the similarity score when this document is returned from a vector search.
     /// </summary>
@@ -31,12 +31,12 @@ public abstract class DocumentBase : IDocument
     /// For insert/update operations, this value will be null.
     /// </remarks>
     public double? Score { get; init; }
-    
+
     /// <summary>
     /// Initializes a new instance of the <see cref="DocumentBase"/> class.
     /// </summary>
     protected DocumentBase() { }
-    
+
     /// <summary>
     /// Initializes a new instance of the <see cref="DocumentBase"/> class with the specified ID.
     /// </summary>

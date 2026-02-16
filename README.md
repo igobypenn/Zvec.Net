@@ -187,4 +187,6 @@ Apache License 2.0
 
 ## Acknowledgments
 
-Built on [zvec](https://github.com/alibaba/zvec) by Alibaba.
+This is a .NET binding for [zvec](https://github.com/alibaba/zvec), a lightweight, lightning-fast, in-process vector database developed by Alibaba.
+
+- **Original C++ Library**: [github.com/alibaba/zvec](https://github.com/alibaba/zvec)

@@ -13,36 +13,36 @@ public sealed class Doc
     /// Gets or sets the unique identifier for this document.
     /// </summary>
     public string Id { get; init; } = string.Empty;
-    
+
     /// <summary>
     /// Gets the similarity score when this document is returned from a search.
     /// </summary>
     public double? Score { get; init; }
-    
+
     /// <summary>
     /// Gets the scalar fields in this document.
     /// </summary>
     public IReadOnlyDictionary<string, object?> Fields { get; init; } = new Dictionary<string, object?>();
-    
+
     /// <summary>
     /// Gets the vector fields in this document.
     /// </summary>
     public IReadOnlyDictionary<string, object?> Vectors { get; init; } = new Dictionary<string, object?>();
-    
+
     /// <summary>
     /// Determines whether the document contains the specified scalar field.
     /// </summary>
     /// <param name="name">The name of the field.</param>
     /// <returns><c>true</c> if the field exists; otherwise, <c>false</c>.</returns>
     public bool HasField(string name) => Fields.ContainsKey(name);
-    
+
     /// <summary>
     /// Determines whether the document contains the specified vector field.
     /// </summary>
     /// <param name="name">The name of the vector field.</param>
     /// <returns><c>true</c> if the vector field exists; otherwise, <c>false</c>.</returns>
     public bool HasVector(string name) => Vectors.ContainsKey(name);
-    
+
     /// <summary>
     /// Gets the value of a scalar field.
     /// </summary>
@@ -50,40 +50,40 @@ public sealed class Doc
     /// <param name="name">The name of the field.</param>
     /// <returns>The field value, or default if not found.</returns>
     public T? Field<T>(string name) => Fields.TryGetValue(name, out var value) ? (T?)value : default;
-    
+
     /// <summary>
     /// Gets the value of a scalar field as an object.
     /// </summary>
     /// <param name="name">The name of the field.</param>
     /// <returns>The field value, or null if not found.</returns>
     public object? Field(string name) => Fields.TryGetValue(name, out var value) ? value : null;
-    
+
     /// <summary>
     /// Gets a value type from a vector field.
     /// </summary>
     /// <typeparam name="T">The type of the vector (e.g., float for sparse vector element).</typeparam>
     /// <param name="name">The name of the vector field.</param>
     /// <returns>The value, or default if not found.</returns>
-    public T? Vector<T>(string name) where T : struct => 
+    public T? Vector<T>(string name) where T : struct =>
         Vectors.TryGetValue(name, out var value) ? (T?)value : null;
-    
+
     /// <summary>
     /// Gets a float array from a vector field.
     /// </summary>
     /// <param name="name">The name of the vector field.</param>
     /// <returns>The float array, or null if not found.</returns>
     public float[]? Vector(string name) => Vectors.TryGetValue(name, out var value) ? value as float[] : null;
-    
+
     /// <summary>
     /// Gets the names of all scalar fields.
     /// </summary>
     public IReadOnlyList<string> FieldNames => Fields.Keys.ToList();
-    
+
     /// <summary>
     /// Gets the names of all vector fields.
     /// </summary>
     public IReadOnlyList<string> VectorNames => Vectors.Keys.ToList();
-    
+
     /// <summary>
     /// Creates a document with an ID and optional single vector.
     /// </summary>
@@ -98,14 +98,14 @@ public sealed class Doc
         {
             vectors[vectorFieldName] = vector;
         }
-        
+
         return new Doc
         {
             Id = id,
             Vectors = vectors
         };
     }
-    
+
     /// <summary>
     /// Creates a document with fields and optional vectors.
     /// </summary>
@@ -122,7 +122,7 @@ public sealed class Doc
             Vectors = vectors ?? new Dictionary<string, object?>()
         };
     }
-    
+
     /// <inheritdoc/>
     public override string ToString()
     {

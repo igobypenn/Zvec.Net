@@ -23,18 +23,18 @@ public sealed class Collection<T> : IVectorCollection<T> where T : class, IDocum
     private IntPtr _handle;
     private readonly CollectionSchema _schema;
     private volatile bool _disposed;
-    
+
     private static readonly ConcurrentDictionary<Type, PropertyInfo[]> PropertyCache = new();
     private static readonly ConcurrentDictionary<Type, Dictionary<string, PropertyInfo>> VectorPropertyCache = new();
     private static readonly ConcurrentDictionary<Type, Dictionary<string, PropertyInfo>> FieldPropertyCache = new();
-    
+
     private Collection(IntPtr handle, CollectionSchema schema, INativeMethods native)
     {
         _handle = handle;
         _schema = schema;
         _native = native;
     }
-    
+
     /// <summary>
     /// Gets the filesystem path where the collection is stored.
     /// </summary>
@@ -47,12 +47,12 @@ public sealed class Collection<T> : IVectorCollection<T> where T : class, IDocum
             return Marshal.PtrToStringUTF8(ptr) ?? string.Empty;
         }
     }
-    
+
     /// <summary>
     /// Gets the schema definition for this collection.
     /// </summary>
     public CollectionSchema Schema => _schema;
-    
+
     /// <summary>
     /// Gets statistics about the collection.
     /// </summary>
@@ -64,9 +64,9 @@ public sealed class Collection<T> : IVectorCollection<T> where T : class, IDocum
             return new CollectionStats();
         }
     }
-    
+
     // ===== Factory Methods =====
-    
+
     /// <summary>
     /// Creates and opens a new vector collection at the specified path.
     /// </summary>
@@ -79,24 +79,24 @@ public sealed class Collection<T> : IVectorCollection<T> where T : class, IDocum
     {
         return CreateAndOpen(path, options, NativeMethodsWrapper.Instance);
     }
-    
+
     internal static Collection<T> CreateAndOpen(string path, CollectionOptions? options, INativeMethods native)
     {
         ThrowHelper.ThrowIfNullOrEmpty(path, nameof(path));
-        
+
         var schema = SchemaGenerator.GenerateSchema<T>();
         var nativeOptions = CreateNativeOptions(options);
-        
+
         var nativeSchemaPtr = CreateNativeSchema(schema, native);
         try
         {
             var status = native.zvec_collection_create_and_open(path, nativeSchemaPtr, in nativeOptions, out var handle);
-            
+
             if (!status.IsOk)
             {
                 throw new ZvecException((StatusCode)status.Code, status.GetMessage() ?? "Failed to create collection");
             }
-            
+
             return new Collection<T>(handle, schema, native);
         }
         finally
@@ -107,7 +107,7 @@ public sealed class Collection<T> : IVectorCollection<T> where T : class, IDocum
             }
         }
     }
-    
+
     /// <summary>
     /// Opens an existing vector collection at the specified path.
     /// </summary>
@@ -120,34 +120,34 @@ public sealed class Collection<T> : IVectorCollection<T> where T : class, IDocum
     {
         return Open(path, options, NativeMethodsWrapper.Instance);
     }
-    
+
     internal static Collection<T> Open(string path, CollectionOptions? options, INativeMethods native)
     {
         ThrowHelper.ThrowIfNullOrEmpty(path, nameof(path));
-        
+
         var nativeOptions = CreateNativeOptions(options);
         var status = native.zvec_collection_open(path, in nativeOptions, out var handle);
-        
+
         if (!status.IsOk)
         {
             throw new ZvecException((StatusCode)status.Code, status.GetMessage() ?? "Failed to open collection");
         }
-        
+
         var schemaPtr = native.zvec_collection_get_schema(handle);
         var schema = NativeSchemaHelper.ReadSchemaFromNative(native, schemaPtr);
-        
+
         return new Collection<T>(handle, schema, native);
     }
-    
+
     // ===== Insert =====
-    
+
     /// <summary>
     /// Inserts one or more documents into the collection.
     /// </summary>
     /// <param name="documents">The documents to insert.</param>
     /// <returns>A status indicating success or failure.</returns>
     public Status Insert(params T[] documents) => Insert(documents.AsEnumerable());
-    
+
     /// <summary>
     /// Inserts documents into the collection.
     /// </summary>
@@ -158,11 +158,11 @@ public sealed class Collection<T> : IVectorCollection<T> where T : class, IDocum
         ThrowIfDisposed();
         var docList = documents.ToList();
         if (docList.Count == 0) return Status.Ok;
-        
-        return ExecuteDocumentOperation(docList, (handle, docs, count) => 
+
+        return ExecuteDocumentOperation(docList, (handle, docs, count) =>
             _native.zvec_collection_insert(handle, docs, count));
     }
-    
+
     /// <summary>
     /// Asynchronously inserts documents into the collection.
     /// </summary>
@@ -178,16 +178,16 @@ public sealed class Collection<T> : IVectorCollection<T> where T : class, IDocum
     {
         return Task.Run(() => Insert(documents), cancellationToken);
     }
-    
+
     // ===== Upsert =====
-    
+
     /// <summary>
     /// Upserts one or more documents into the collection (insert or update).
     /// </summary>
     /// <param name="documents">The documents to upsert.</param>
     /// <returns>A status indicating success or failure.</returns>
     public Status Upsert(params T[] documents) => Upsert(documents.AsEnumerable());
-    
+
     /// <summary>
     /// Upserts documents into the collection (insert or update).
     /// </summary>
@@ -198,11 +198,11 @@ public sealed class Collection<T> : IVectorCollection<T> where T : class, IDocum
         ThrowIfDisposed();
         var docList = documents.ToList();
         if (docList.Count == 0) return Status.Ok;
-        
-        return ExecuteDocumentOperation(docList, (handle, docs, count) => 
+
+        return ExecuteDocumentOperation(docList, (handle, docs, count) =>
             _native.zvec_collection_upsert(handle, docs, count));
     }
-    
+
     /// <summary>
     /// Asynchronously upserts documents into the collection.
     /// </summary>
@@ -218,16 +218,16 @@ public sealed class Collection<T> : IVectorCollection<T> where T : class, IDocum
     {
         return Task.Run(() => Upsert(documents), cancellationToken);
     }
-    
+
     // ===== Update =====
-    
+
     /// <summary>
     /// Updates one or more existing documents in the collection.
     /// </summary>
     /// <param name="documents">The documents to update.</param>
     /// <returns>A status indicating success or failure.</returns>
     public Status Update(params T[] documents) => Update(documents.AsEnumerable());
-    
+
     /// <summary>
     /// Updates existing documents in the collection.
     /// </summary>
@@ -238,11 +238,11 @@ public sealed class Collection<T> : IVectorCollection<T> where T : class, IDocum
         ThrowIfDisposed();
         var docList = documents.ToList();
         if (docList.Count == 0) return Status.Ok;
-        
-        return ExecuteDocumentOperation(docList, (handle, docs, count) => 
+
+        return ExecuteDocumentOperation(docList, (handle, docs, count) =>
             _native.zvec_collection_update(handle, docs, count));
     }
-    
+
     /// <summary>
     /// Asynchronously updates existing documents in the collection.
     /// </summary>
@@ -258,16 +258,16 @@ public sealed class Collection<T> : IVectorCollection<T> where T : class, IDocum
     {
         return Task.Run(() => Update(documents), cancellationToken);
     }
-    
+
     // ===== Delete =====
-    
+
     /// <summary>
     /// Deletes documents by their IDs.
     /// </summary>
     /// <param name="ids">The IDs of documents to delete.</param>
     /// <returns>A status indicating success or failure.</returns>
     public Status Delete(params string[] ids) => Delete(ids.AsEnumerable());
-    
+
     /// <summary>
     /// Deletes documents by their IDs.
     /// </summary>
@@ -278,13 +278,13 @@ public sealed class Collection<T> : IVectorCollection<T> where T : class, IDocum
         ThrowIfDisposed();
         var idList = ids.ToList();
         if (idList.Count == 0) return Status.Ok;
-        
+
         var idArray = idList.ToArray();
         var status = _native.zvec_collection_delete(_handle, idArray, (nuint)idArray.Length);
-        
+
         return status.ToStatus();
     }
-    
+
     /// <summary>
     /// Asynchronously deletes documents by their IDs.
     /// </summary>
@@ -300,7 +300,7 @@ public sealed class Collection<T> : IVectorCollection<T> where T : class, IDocum
     {
         return Task.Run(() => Delete(ids), cancellationToken);
     }
-    
+
     /// <summary>
     /// Deletes documents matching a filter expression.
     /// </summary>
@@ -312,7 +312,7 @@ public sealed class Collection<T> : IVectorCollection<T> where T : class, IDocum
         var status = _native.zvec_collection_delete_by_filter(_handle, filter);
         return status.ToStatus();
     }
-    
+
     /// <summary>
     /// Asynchronously deletes documents matching a filter expression.
     /// </summary>
@@ -328,9 +328,9 @@ public sealed class Collection<T> : IVectorCollection<T> where T : class, IDocum
     {
         return Task.Run(() => DeleteByFilter(filter), cancellationToken);
     }
-    
+
     // ===== Query =====
-    
+
     /// <summary>
     /// Creates a new query builder for vector similarity search.
     /// </summary>
@@ -340,7 +340,7 @@ public sealed class Collection<T> : IVectorCollection<T> where T : class, IDocum
         ThrowIfDisposed();
         return new VectorQueryBuilder<T>(this);
     }
-    
+
     /// <summary>
     /// Executes a vector similarity query.
     /// </summary>
@@ -351,12 +351,12 @@ public sealed class Collection<T> : IVectorCollection<T> where T : class, IDocum
     {
         ThrowIfDisposed();
         options ??= QueryOptions.Default;
-        
+
         vectorQuery.Validate();
-        
+
         return ExecuteQuery(new[] { vectorQuery }, options);
     }
-    
+
     /// <summary>
     /// Asynchronously executes a vector similarity query.
     /// </summary>
@@ -373,24 +373,24 @@ public sealed class Collection<T> : IVectorCollection<T> where T : class, IDocum
     {
         return Task.Run(() => Query(vectorQuery, options), cancellationToken);
     }
-    
+
     internal IReadOnlyList<T> ExecuteQuery(IReadOnlyList<VectorQuery> vectorQueries, QueryOptions options)
     {
         ThrowIfDisposed();
-        
+
         if (vectorQueries.Count == 0)
         {
             return new List<T>();
         }
-        
+
         var firstQuery = vectorQueries[0];
-        
+
         var queryPtr = _native.zvec_query_create();
         if (queryPtr == IntPtr.Zero)
         {
             throw new ZvecException(StatusCode.InternalError, "Failed to create query");
         }
-        
+
         try
         {
             BuildNativeQuery(queryPtr, firstQuery, options);
@@ -401,29 +401,29 @@ public sealed class Collection<T> : IVectorCollection<T> where T : class, IDocum
             _native.zvec_query_destroy(queryPtr);
         }
     }
-    
+
     private void BuildNativeQuery(IntPtr queryPtr, VectorQuery vectorQuery, QueryOptions options)
     {
         _native.zvec_query_set_topk(queryPtr, options.TopK);
         _native.zvec_query_set_field_name(queryPtr, vectorQuery.FieldName);
-        
+
         SetQueryVector(queryPtr, vectorQuery.Vector);
-        
+
         if (!string.IsNullOrEmpty(options.Filter))
         {
             _native.zvec_query_set_filter(queryPtr, options.Filter);
         }
-        
+
         _native.zvec_query_set_include_vector(queryPtr, options.IncludeVectors ? 1 : 0);
-        
+
         SetQueryOutputFields(queryPtr, options.OutputFields);
         SetQueryParamOptions(queryPtr, vectorQuery.Param);
     }
-    
+
     private void SetQueryVector(IntPtr queryPtr, float[]? vector)
     {
         if (vector == null || vector.Length == 0) return;
-        
+
         var handle = GCHandle.Alloc(vector, GCHandleType.Pinned);
         try
         {
@@ -438,11 +438,11 @@ public sealed class Collection<T> : IVectorCollection<T> where T : class, IDocum
             handle.Free();
         }
     }
-    
+
     private void SetQueryOutputFields(IntPtr queryPtr, IReadOnlyList<string>? outputFields)
     {
         if (outputFields == null || outputFields.Count == 0) return;
-        
+
         var fieldPtrs = new IntPtr[outputFields.Count];
         try
         {
@@ -450,7 +450,7 @@ public sealed class Collection<T> : IVectorCollection<T> where T : class, IDocum
             {
                 fieldPtrs[i] = Marshal.StringToHGlobalAnsi(outputFields[i]);
             }
-            
+
             unsafe
             {
                 fixed (IntPtr* ptr = fieldPtrs)
@@ -470,7 +470,7 @@ public sealed class Collection<T> : IVectorCollection<T> where T : class, IDocum
             }
         }
     }
-    
+
     private void SetQueryParamOptions(IntPtr queryPtr, IndexQueryParam? param)
     {
         switch (param)
@@ -483,16 +483,16 @@ public sealed class Collection<T> : IVectorCollection<T> where T : class, IDocum
                 break;
         }
     }
-    
+
     private IReadOnlyList<T> ExecuteNativeQuery(IntPtr queryPtr)
     {
         var status = _native.zvec_collection_query(_handle, queryPtr, out var resultPtr);
-        
+
         if (!status.IsOk)
         {
             throw new ZvecException((StatusCode)status.Code, status.GetMessage() ?? "Query failed");
         }
-        
+
         try
         {
             return ReadResults(resultPtr);
@@ -502,16 +502,16 @@ public sealed class Collection<T> : IVectorCollection<T> where T : class, IDocum
             _native.zvec_result_destroy(resultPtr);
         }
     }
-    
+
     // ===== Fetch =====
-    
+
     /// <summary>
     /// Fetches documents by their IDs.
     /// </summary>
     /// <param name="ids">The IDs of documents to fetch.</param>
     /// <returns>A dictionary mapping IDs to documents.</returns>
     public IReadOnlyDictionary<string, T> Fetch(params string[] ids) => Fetch(ids.AsEnumerable());
-    
+
     /// <summary>
     /// Fetches documents by their IDs.
     /// </summary>
@@ -522,15 +522,15 @@ public sealed class Collection<T> : IVectorCollection<T> where T : class, IDocum
         ThrowIfDisposed();
         var idList = ids.ToList();
         if (idList.Count == 0) return new Dictionary<string, T>();
-        
+
         var idArray = idList.ToArray();
         var status = _native.zvec_collection_fetch(_handle, idArray, (nuint)idArray.Length, out var resultPtr);
-        
+
         if (!status.IsOk)
         {
             throw new ZvecException((StatusCode)status.Code, status.GetMessage() ?? "Fetch failed");
         }
-        
+
         try
         {
             var results = ReadResults(resultPtr);
@@ -541,7 +541,7 @@ public sealed class Collection<T> : IVectorCollection<T> where T : class, IDocum
             _native.zvec_result_destroy(resultPtr);
         }
     }
-    
+
     /// <summary>
     /// Asynchronously fetches documents by their IDs.
     /// </summary>
@@ -557,9 +557,9 @@ public sealed class Collection<T> : IVectorCollection<T> where T : class, IDocum
     {
         return Task.Run(() => Fetch(ids), cancellationToken);
     }
-    
+
     // ===== DDL =====
-    
+
     /// <summary>
     /// Flushes pending writes to disk.
     /// </summary>
@@ -568,7 +568,7 @@ public sealed class Collection<T> : IVectorCollection<T> where T : class, IDocum
         ThrowIfDisposed();
         _native.zvec_collection_flush(_handle).ThrowIfError("Flush");
     }
-    
+
     /// <summary>
     /// Asynchronously flushes pending writes to disk.
     /// </summary>
@@ -583,7 +583,7 @@ public sealed class Collection<T> : IVectorCollection<T> where T : class, IDocum
     {
         return Task.Run(Flush, cancellationToken);
     }
-    
+
     /// <summary>
     /// Creates an index on a vector field for faster similarity search.
     /// </summary>
@@ -595,7 +595,7 @@ public sealed class Collection<T> : IVectorCollection<T> where T : class, IDocum
         var nativeFieldDef = NativeFieldDef.Create(fieldName, (int)indexParams.Type);
         _native.zvec_collection_create_index(_handle, fieldName, in nativeFieldDef).ThrowIfError("CreateIndex");
     }
-    
+
     /// <summary>
     /// Asynchronously creates an index on a vector field.
     /// </summary>
@@ -612,7 +612,7 @@ public sealed class Collection<T> : IVectorCollection<T> where T : class, IDocum
     {
         return Task.Run(() => CreateIndex(fieldName, indexParams), cancellationToken);
     }
-    
+
     /// <summary>
     /// Drops an index from a field.
     /// </summary>
@@ -622,7 +622,7 @@ public sealed class Collection<T> : IVectorCollection<T> where T : class, IDocum
         ThrowIfDisposed();
         _native.zvec_collection_drop_index(_handle, fieldName).ThrowIfError("DropIndex");
     }
-    
+
     /// <summary>
     /// Asynchronously drops an index from a field.
     /// </summary>
@@ -638,7 +638,7 @@ public sealed class Collection<T> : IVectorCollection<T> where T : class, IDocum
     {
         return Task.Run(() => DropIndex(fieldName), cancellationToken);
     }
-    
+
     /// <summary>
     /// Optimizes the collection for better query performance.
     /// </summary>
@@ -647,7 +647,7 @@ public sealed class Collection<T> : IVectorCollection<T> where T : class, IDocum
         ThrowIfDisposed();
         _native.zvec_collection_optimize(_handle).ThrowIfError("Optimize");
     }
-    
+
     /// <summary>
     /// Asynchronously optimizes the collection.
     /// </summary>
@@ -662,7 +662,7 @@ public sealed class Collection<T> : IVectorCollection<T> where T : class, IDocum
     {
         return Task.Run(Optimize, cancellationToken);
     }
-    
+
     /// <summary>
     /// Destroys the collection and deletes all data from disk.
     /// </summary>
@@ -671,7 +671,7 @@ public sealed class Collection<T> : IVectorCollection<T> where T : class, IDocum
         ThrowIfDisposed();
         _native.zvec_collection_destroy_data(_handle).ThrowIfError("Destroy");
     }
-    
+
     /// <summary>
     /// Disposes the collection, releasing the native handle.
     /// </summary>
@@ -685,14 +685,14 @@ public sealed class Collection<T> : IVectorCollection<T> where T : class, IDocum
             _handle = IntPtr.Zero;
         }
     }
-    
+
     private void ThrowIfDisposed()
     {
         if (_disposed) throw ThrowHelper.CollectionDisposed();
     }
-    
+
     // ===== Helper Methods =====
-    
+
     private static NativeCollectionOptions CreateNativeOptions(CollectionOptions? options)
     {
         return NativeCollectionOptions.Create(
@@ -700,7 +700,7 @@ public sealed class Collection<T> : IVectorCollection<T> where T : class, IDocum
             options?.IndexBuildParallel ?? 0,
             options?.AutoFlush ?? true);
     }
-    
+
     private Status ExecuteDocumentOperation(IReadOnlyList<T> documents, Func<IntPtr, IntPtr[], nuint, NativeStatus> operation)
     {
         var handles = CreateNativeDocs(documents);
@@ -717,12 +717,12 @@ public sealed class Collection<T> : IVectorCollection<T> where T : class, IDocum
             }
         }
     }
-    
+
     private IReadOnlyList<T> ReadResults(IntPtr resultPtr)
     {
         var count = (int)_native.zvec_result_count(resultPtr);
         var results = new List<T>(count);
-        
+
         for (int i = 0; i < count; i++)
         {
             var docPtr = _native.zvec_result_get_doc(resultPtr, (nuint)i);
@@ -732,28 +732,28 @@ public sealed class Collection<T> : IVectorCollection<T> where T : class, IDocum
                 results.Add(doc);
             }
         }
-        
+
         return results;
     }
-    
+
     private T ReadDocument(IntPtr docPtr)
     {
         var doc = new T();
-        
+
         var pkPtr = _native.zvec_doc_get_pk(docPtr);
         if (pkPtr != IntPtr.Zero)
         {
             doc.Id = Marshal.PtrToStringUTF8(pkPtr) ?? string.Empty;
         }
-        
+
         var score = _native.zvec_doc_get_score(docPtr);
-        
+
         if (typeof(DocumentBase).IsAssignableFrom(typeof(T)))
         {
             var scoreProp = typeof(T).GetProperty(nameof(DocumentBase.Score));
             scoreProp?.SetValue(doc, score);
         }
-        
+
         var fieldProps = GetFieldProperties();
         foreach (var (name, prop) in fieldProps)
         {
@@ -766,79 +766,79 @@ public sealed class Collection<T> : IVectorCollection<T> where T : class, IDocum
                 }
             }
         }
-        
+
         return doc;
     }
-    
+
     private object? ReadFieldValue(IntPtr docPtr, string fieldName, Type propertyType)
     {
         var underlying = Nullable.GetUnderlyingType(propertyType) ?? propertyType;
-        
+
         if (underlying == typeof(string))
         {
             var ptr = _native.zvec_doc_get_string(docPtr, fieldName);
             return ptr != IntPtr.Zero ? Marshal.PtrToStringUTF8(ptr) : null;
         }
-        
+
         if (underlying == typeof(int))
         {
             return (int)_native.zvec_doc_get_int64(docPtr, fieldName);
         }
-        
+
         if (underlying == typeof(long))
         {
             return _native.zvec_doc_get_int64(docPtr, fieldName);
         }
-        
+
         if (underlying == typeof(float))
         {
             return (float)_native.zvec_doc_get_double(docPtr, fieldName);
         }
-        
+
         if (underlying == typeof(double))
         {
             return _native.zvec_doc_get_double(docPtr, fieldName);
         }
-        
+
         if (underlying == typeof(bool))
         {
             return _native.zvec_doc_get_bool(docPtr, fieldName) != 0;
         }
-        
+
         return null;
     }
-    
+
     private IntPtr[] CreateNativeDocs(IReadOnlyList<T> documents)
     {
         var handles = new IntPtr[documents.Count];
         var fieldProps = GetFieldProperties();
         var vectorProps = GetVectorProperties();
-        
+
         for (int i = 0; i < documents.Count; i++)
         {
             var doc = documents[i];
             var handle = _native.zvec_doc_create();
-            
+
             _native.zvec_doc_set_pk(handle, doc.Id);
-            
+
             foreach (var (name, prop) in fieldProps)
             {
                 var value = prop.GetValue(doc);
                 SetFieldValue(handle, name, value, prop.PropertyType);
             }
-            
+
             foreach (var (name, prop) in vectorProps)
             {
                 var value = prop.GetValue(doc);
                 SetVectorValue(handle, name, value, prop);
             }
-            
+
             handles[i] = handle;
         }
-        
+
         return handles;
     }
-    
+
     private void SetFieldValue(IntPtr docPtr, string fieldName, object? value, Type type)
     {
         if (value == null)
@@ -846,9 +846,9 @@ public sealed class Collection<T> : IVectorCollection<T> where T : class, IDocum
             _native.zvec_doc_set_null(docPtr, fieldName);
             return;
         }
-        
+
         var underlying = Nullable.GetUnderlyingType(type) ?? type;
-        
+
         if (underlying == typeof(string))
         {
             _native.zvec_doc_set_string(docPtr, fieldName, (string)value);
@@ -874,14 +874,14 @@ public sealed class Collection<T> : IVectorCollection<T> where T : class, IDocum
             _native.zvec_doc_set_bool(docPtr, fieldName, (bool)value ? 1 : 0);
         }
     }
-    
+
     private void SetVectorValue(IntPtr docPtr, string fieldName, object? value, PropertyInfo prop)
     {
         if (value == null) return;
-        
+
         var attr = prop.GetCustomAttribute<VectorFieldAttribute>();
         if (attr == null) return;
-        
+
         if (attr.Precision == VectorPrecision.Float32 && value is float[] f32Arr && f32Arr.Length > 0)
         {
             unsafe
@@ -893,7 +893,7 @@ public sealed class Collection<T> : IVectorCollection<T> where T : class, IDocum
             }
         }
     }
-    
+
     private Dictionary<string, PropertyInfo> GetFieldProperties()
     {
         return FieldPropertyCache.GetOrAdd(typeof(T), t =>
@@ -905,13 +905,13 @@ public sealed class Collection<T> : IVectorCollection<T> where T : class, IDocum
                 if (prop.Name == nameof(IDocument.Id)) continue;
                 if (prop.Name == nameof(DocumentBase.Score)) continue;
                 if (prop.GetCustomAttribute<VectorFieldAttribute>() != null) continue;
-                
+
                 result[prop.Name] = prop;
             }
             return result;
         });
     }
-    
+
     private Dictionary<string, PropertyInfo> GetVectorProperties()
     {
         return VectorPropertyCache.GetOrAdd(typeof(T), t =>
@@ -927,7 +927,7 @@ public sealed class Collection<T> : IVectorCollection<T> where T : class, IDocum
             return result;
         });
     }
-    
+
     private static IntPtr CreateNativeSchema(CollectionSchema schema, INativeMethods native)
     {
         var schemaPtr = native.zvec_schema_create(schema.Name);
@@ -935,7 +935,7 @@ public sealed class Collection<T> : IVectorCollection<T> where T : class, IDocum
         {
             throw new ZvecException(StatusCode.InternalError, "Failed to create native schema");
         }
-        
+
         try
         {
             foreach (var field in schema.Fields)
@@ -946,7 +946,7 @@ public sealed class Collection<T> : IVectorCollection<T> where T : class, IDocum
                     var status = native.zvec_schema_add_field(schemaPtr, in fieldDef);
                     if (!status.IsOk)
                     {
-                        throw new ZvecException((StatusCode)status.Code, 
+                        throw new ZvecException((StatusCode)status.Code,
                             $"Failed to add field '{field.Name}': {status.GetMessage()}");
                     }
                 }
@@ -955,7 +955,7 @@ public sealed class Collection<T> : IVectorCollection<T> where T : class, IDocum
                     fieldDef.Free();
                 }
             }
-            
+
             foreach (var vector in schema.Vectors)
             {
                 var fieldDef = NativeFieldDef.FromVectorSchema(vector);
@@ -973,7 +973,7 @@ public sealed class Collection<T> : IVectorCollection<T> where T : class, IDocum
                     fieldDef.Free();
                 }
             }
-            
+
             return schemaPtr;
         }
         catch
